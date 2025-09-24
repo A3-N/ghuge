@@ -1,0 +1,5 @@
+settings.json
+*.log
+*.potfile
+*.pot
+.DS_Store
