@@ -1936,39 +1936,7 @@ function Invoke-NumericScript([string]$Num, [string]$Path, [object]$Cfg) {
     $global:GH_DeferredCommands = $null
   }
 }
-function Apply-EnvForScript([object]$Cfg) {
-  $eff = $Cfg.effective
-  # main vars
-  $script:HASHCAT   = $eff.hashcatExe   ?? ''
-  $script:KERNEL    = $eff.kernelFlag   ?? ''
-  $script:LOOPBACK  = $eff.loopbackFlag ?? ''
-  $script:HWMON     = $eff.hwmonFlag    ?? ''
-  $script:HASHTYPE  = $eff.hashtype     ?? ''
-  $script:RULELISTS = $eff.rulelists    ?? ''
-  $script:WORDLISTS = $eff.wordlists    ?? ''
-  $script:HASHES    = $eff.hashes       ?? ''
 
-  Add-HashcatDirsToPath -HashcatExePath $script:HASHCAT
-
-  if ($eff.rulePaths) {
-    foreach ($entry in $eff.rulePaths.GetEnumerator()) {
-      $name = $entry.Key
-      $path = $entry.Value
-      if ([string]::IsNullOrWhiteSpace($name)) { continue }
-      Set-Variable -Name $name -Value ($path ?? '') -Scope Script -Force
-    }
-    $script:RULEMAP = $eff.rulePaths
-  }
-
-  $env:HASHCAT   = $script:HASHCAT
-  $env:KERNEL    = $script:KERNEL
-  $env:LOOPBACK  = $script:LOOPBACK
-  $env:HWMON     = $script:HWMON
-  $env:HASHTYPE  = [string]$script:HASHTYPE
-  $env:RULELISTS = $script:RULELISTS
-  $env:WORDLISTS = $script:WORDLISTS
-  $env:HASHES    = $script:HASHES
-}
 
 
 # ═══════════════════════════════════════════════════════════════════════
