@@ -3,3 +3,5 @@ settings.json
 *.potfile
 *.pot
 .DS_Store
+*.txt
+/logs
