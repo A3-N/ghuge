@@ -93,10 +93,24 @@ function Write-RunningBanner {
   Write-C " ───" -Fg brightblack
 }
 
+function Normalize-HashcatArg([string]$item) {
+  if ($null -eq $item) { return $null }
+  $arg = $item.ToString().Trim()
+  if ($arg -match '^(\[string\])(.+)$') {
+    $arg = $matches[2]
+  }
+  # Remove surrounding quotes if present
+  if ($arg.Length -ge 2 -and (($arg.StartsWith('"') -and $arg.EndsWith('"')) -or ($arg.StartsWith("'") -and $arg.EndsWith("'")))) {
+    $arg = $arg.Substring(1, $arg.Length - 2)
+  }
+  return $arg
+}
+
 # ── Shared utilities ────────────────────────────────────────────────
 
 function Add-If([ref]$arr, [string]$item) {
-  if ($null -ne $item -and $item.Trim() -ne '') { $arr.Value += ,$item }
+  $arg = Normalize-HashcatArg $item
+  if ($null -ne $arg -and $arg.Trim() -ne '') { $arr.Value += ,$arg }
 }
 
 function Read-HostEsc {
@@ -407,7 +421,7 @@ function Build-BaseArgs {
   if ($Kernel -and $Kernel.Trim() -ne '') { $cmdArgs += '--bitmap-max=24' }
   Add-If -arr ([ref]$cmdArgs) $Hwmon
   $cmdArgs += "-m$HashType"
-  Add-If -arr ([ref]$cmdArgs) $Hashlist
+  Add-If -arr ([ref]$cmdArgs) (Normalize-HashcatArg $Hashlist)
   
   if ($Wordlist) {
     if ($Wordlist -is [array]) {
@@ -465,11 +479,16 @@ function Invoke-PlannedCommands {
 
     for ($i = 0; $i -lt $Planned.Count; $i++) {
       $item = $Planned[$i]
+      # Normalize command args to avoid stray type prefixes like '[string]'
+      $normalizedArgs = @()
+      foreach ($a in $item.Args) { $normalizedArgs += Normalize-HashcatArg $a }
+      $normalizedArgs = $normalizedArgs | Where-Object { $_ -and $_ -ne '' }
+
       Write-RunningBanner -Index ($i+1) -Total $Planned.Count
-      Write-C "  $HashcatExe $($item.Args -join ' ')" -Fg cyan -Dim
+      Write-C "  $HashcatExe $($normalizedArgs -join ' ')" -Fg cyan -Dim
       try {
         Push-Location $HashcatDir
-        & $HashcatExe @($item.Args) | Out-Host
+        & $HashcatExe @($normalizedArgs) | Out-Host
       } catch {
         Write-Err "Command failed: $($_.Exception.Message)"
       } finally {
